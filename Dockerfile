@@ -1,10 +1,11 @@
 # BUILD
-FROM node:24-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm i
+RUN --mount=type=cache,target=/root/.npm \
+    npm install
 
 COPY . .
 
@@ -13,11 +14,8 @@ RUN npm run build
 # RUN
 FROM nginx:alpine AS production
 
-RUN rm /etc/nginx/conf.d/default.conf
-
+COPY --from=builder /app/out /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 
