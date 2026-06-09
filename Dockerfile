@@ -1,28 +1,24 @@
 # BUILD
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm i
 
 COPY . .
 
 RUN npm run build
 
 # RUN
-FROM node:20-alpine AS production
+FROM nginx:alpine AS production
 
-WORKDIR /app
+RUN rm /etc/nginx/conf.d/default.conf
 
-ENV NODE_ENV=production \
-    HOSTNAME=0.0.0.0 \
-    PORT=3000
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 3000
+EXPOSE 80
 
-CMD ["node", "server.js"]
+CMD ["nginx", "-g", "daemon off;"]
