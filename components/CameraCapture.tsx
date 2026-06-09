@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 
 type Photo = { id: string; src: string };
 
@@ -13,6 +13,12 @@ export default function CameraCapture() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
   const startCamera = useCallback(async () => {
     setError(null);
     try {
@@ -21,7 +27,6 @@ export default function CameraCapture() {
         audio: false,
       });
       setStream(ms);
-      if (videoRef.current) videoRef.current.srcObject = ms;
     } catch {
       setError("Câmera não disponível.");
     }
@@ -34,7 +39,7 @@ export default function CameraCapture() {
 
   const takePhoto = useCallback(() => {
     const v = videoRef.current, c = canvasRef.current;
-    if (!v || !c) return;
+    if (!v || !c || v.videoWidth === 0) return;
     c.width = v.videoWidth;
     c.height = v.videoHeight;
     c.getContext("2d")?.drawImage(v, 0, 0);
